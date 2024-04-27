@@ -50,7 +50,7 @@ func sendData(conn net.Conn, status int) {
 	default:
 		os.Exit(1)
 	}
-
+	sendData += "\r\n\r\n"
 	fmt.Printf("Sending %s to %s", sendData, conn.RemoteAddr().String())
 	conn.Write([]byte(sendData))
 }
