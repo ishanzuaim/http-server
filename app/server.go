@@ -127,6 +127,7 @@ func handleURL(conn net.Conn, headerMap map[string]string, args []string) {
 }
 
 func handleConnection(conn net.Conn, args []string) {
+	defer conn.Close()
 	connectionBytes := make([]byte, 1024)
 	conn.Read(connectionBytes)
 	headerMap := parseHeader(string(connectionBytes))
