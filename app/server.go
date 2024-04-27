@@ -37,6 +37,7 @@ func parseHeader(header string) map[string]string {
 	startLine := strings.Split(eachHeader[0], " ")
 	header_map["method"] = startLine[0]
 	header_map["url"] = startLine[1]
+	header_map["agent"] = strings.Split(eachHeader[2], ": ")[1]
 	return header_map
 }
 
@@ -69,12 +70,16 @@ func echoData(url string) string {
 	return after
 }
 
-func handleURL(conn net.Conn, url string) {
+func handleURL(conn net.Conn, headerMap map[string]string) {
+	url := headerMap["url"]
 	if url == "/" {
 		sendData(conn, 200, "")
 	}
 	if strings.HasPrefix(url, "/echo") {
 		sendData(conn, 200, echoData(url))
+	}
+	if strings.HasPrefix(url, "/user-agent") {
+		sendData(conn, 200, headerMap["agent"])
 	} else {
 		sendData(conn, 404, "")
 	}
@@ -86,6 +91,6 @@ func handleConnection(conn net.Conn) {
 	conn.Read(connectionBytes)
 	headerMap := parseHeader(string(connectionBytes))
 	fmt.Printf("Recieved %s for %s\n\n", headerMap["method"], headerMap["url"])
-	handleURL(conn, headerMap["url"])
+	handleURL(conn, headerMap)
 
 }
