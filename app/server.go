@@ -73,7 +73,7 @@ func getStatusLine(status int) string {
 func sendData(conn net.Conn, status int, body string) {
 	data := getStatusLine(status)
 	if body != "" {
-		data = appendBody(data, body)
+		data += appendBody(data, body)
 	} else {
 		data += "\r\n"
 	}
