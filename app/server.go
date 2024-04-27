@@ -84,7 +84,6 @@ func handleURL(conn net.Conn, headerMap map[string]string) {
 	} else {
 		sendData(conn, 404, "")
 	}
-
 }
 
 func handleConnection(conn net.Conn) {
