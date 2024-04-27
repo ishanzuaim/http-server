@@ -85,7 +85,7 @@ func sendFile(conn net.Conn, file, directory string) {
 	data := getStatusLine(200)
 	data += getHeader("Content-Type", "application/octet-stream")
 
-	absolutePath := fmt.Sprintf("%s/%s", directory, file)
+	absolutePath := fmt.Sprintf("%s%s", directory, file)
 	fmt.Println(absolutePath)
 	fileData, err := os.ReadFile(absolutePath)
 	if err != nil {
