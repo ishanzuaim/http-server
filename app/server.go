@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -131,14 +132,14 @@ func handleGET(conn net.Conn, headerMap map[string]string, args []string) {
 
 func writeFile(conn net.Conn, filePath, directory, body string) {
 	absolutePath := fmt.Sprintf("%s%s", directory, filePath)
-	fmt.Println(absolutePath, body, "asd")
+	fmt.Println(absolutePath)
 	f, err := os.Create(absolutePath)
 	if err != nil {
 		sendData(conn, 404, "")
 		return
 	}
 	defer f.Close()
-	f.Write([]byte(body))
+	f.Write(bytes.Trim([]byte(body), "\x00"))
 	sendData(conn, 201, "")
 }
 
