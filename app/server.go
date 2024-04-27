@@ -37,7 +37,10 @@ func parseHeader(header string) map[string]string {
 	header_map["method"] = startLine[0]
 	header_map["url"] = startLine[1]
 	if len(eachHeader) > 2 {
-		header_map["agent"] = strings.Split(eachHeader[2], ": ")[1]
+		agent_header := strings.Split(eachHeader[2], ": ")
+		if len(agent_header) > 1 {
+			header_map["agent"] = agent_header[1]
+		}
 	}
 	return header_map
 }
