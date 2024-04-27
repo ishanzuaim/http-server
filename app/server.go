@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"strings"
-	// Uncomment this block to pass the first stage
 	"net"
 	"os"
+	"strings"
 )
 
 func throw_error(message ...string) {
