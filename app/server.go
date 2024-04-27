@@ -59,7 +59,11 @@ func sendData(conn net.Conn, status int, body string) {
 		os.Exit(1)
 	}
 	sendData += "\r\n"
-	sendData = appendBody(sendData, body)
+	if body != "" {
+		sendData = appendBody(sendData, body)
+	} else {
+		sendData += "\r\n"
+	}
 	fmt.Printf("Sending: %s\n", sendData)
 	conn.Write([]byte(sendData))
 }
@@ -73,15 +77,14 @@ func handleURL(conn net.Conn, headerMap map[string]string) {
 	url := headerMap["url"]
 	if url == "/" {
 		sendData(conn, 200, "")
-	}
-	if strings.HasPrefix(url, "/echo") {
+	} else if strings.HasPrefix(url, "/echo") {
 		sendData(conn, 200, echoData(url))
-	}
-	if strings.HasPrefix(url, "/user-agent") {
+	} else if strings.HasPrefix(url, "/user-agent") {
 		sendData(conn, 200, headerMap["agent"])
 	} else {
 		sendData(conn, 404, "")
 	}
+
 }
 
 func handleConnection(conn net.Conn) {
