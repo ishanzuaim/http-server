@@ -32,7 +32,8 @@ func main() {
 	}
 }
 
-func parseHeader(header string) map[string]string {
+func parseHeaderAndBody(header string) (map[string]string, string) {
+	fmt.Println("raw data is :", header)
 	header_map := make(map[string]string)
 	eachHeader := strings.Split(header, "\r\n")
 	startLine := strings.Split(eachHeader[0], " ")
@@ -44,7 +45,7 @@ func parseHeader(header string) map[string]string {
 			header_map["agent"] = agent_header[1]
 		}
 	}
-	return header_map
+	return header_map, eachHeader[len(eachHeader)-1]
 }
 
 func getHeader(key, value string) string {
@@ -62,6 +63,7 @@ func getStatusLine(status int) string {
 	statusLine := fmt.Sprintf("HTTP/1.1 %d ", status)
 	switch status {
 	case 200:
+	case 201:
 		statusLine += "OK"
 	case 404:
 		statusLine += "Not Found"
@@ -107,7 +109,7 @@ func getSuffix(url, initial string) string {
 	return after
 }
 
-func handleURL(conn net.Conn, headerMap map[string]string, args []string) {
+func handleGET(conn net.Conn, headerMap map[string]string, args []string) {
 	url := headerMap["url"]
 	if url == "/" {
 		sendData(conn, 200, "")
@@ -117,9 +119,35 @@ func handleURL(conn net.Conn, headerMap map[string]string, args []string) {
 		sendData(conn, 200, headerMap["agent"])
 	} else if strings.HasPrefix(url, "/files") {
 		filePath := getSuffix(url, "/files/")
-		fmt.Println("args legnth: ", len(args))
 		if len(args) > 1 && args[0] == "--directory" {
 			sendFile(conn, filePath, args[1])
+		} else {
+			sendData(conn, 404, "")
+		}
+	} else {
+		sendData(conn, 404, "")
+	}
+}
+
+func writeFile(conn net.Conn, filePath, directory, body string) {
+	absolutePath := fmt.Sprintf("%s%s", directory, filePath)
+	fmt.Println(absolutePath, body, "asd")
+	f, err := os.Create(absolutePath)
+	if err != nil {
+		sendData(conn, 404, "")
+		return
+	}
+	defer f.Close()
+	f.Write([]byte(body))
+	sendData(conn, 201, "")
+}
+
+func handlePOST(conn net.Conn, headerMap map[string]string, args []string, body string) {
+	url := headerMap["url"]
+	if strings.HasPrefix(url, "/files") {
+		filePath := getSuffix(url, "/files/")
+		if len(args) > 1 && args[0] == "--directory" {
+			writeFile(conn, filePath, args[1], body)
 		} else {
 			sendData(conn, 404, "")
 		}
@@ -132,7 +160,11 @@ func handleConnection(conn net.Conn, args []string) {
 	defer conn.Close()
 	connectionBytes := make([]byte, 1024)
 	conn.Read(connectionBytes)
-	headerMap := parseHeader(string(connectionBytes))
+	headerMap, body := parseHeaderAndBody(string(connectionBytes))
 	fmt.Printf("Recieved %s for %s\n\n", headerMap["method"], headerMap["url"])
-	handleURL(conn, headerMap, args)
+	if headerMap["method"] == "GET" {
+		handleGET(conn, headerMap, args)
+	} else if headerMap["method"] == "POST" {
+		handlePOST(conn, headerMap, args, body)
+	}
 }
