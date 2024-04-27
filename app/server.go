@@ -14,7 +14,7 @@ func throw_error(message ...string) {
 }
 
 func main() {
-	fmt.Println("Listening to localhost on port 4221...")
+	fmt.Printf("Listening to localhost on port 4221...\n\n")
 
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
@@ -26,7 +26,7 @@ func main() {
 		if err != nil {
 			throw_error("Error accepting connection: ", err.Error())
 		}
-		fmt.Println("Incoming connection request from ", conn.RemoteAddr().String())
+		fmt.Println("\nIncoming connection request from ", conn.RemoteAddr().String())
 		go handleConnection(conn)
 	}
 }
@@ -40,7 +40,15 @@ func parseHeader(header string) map[string]string {
 	return header_map
 }
 
-func sendData(conn net.Conn, status int) {
+func appendBody(sendData string, body string) string {
+	sendData += "Content-Type: text/plain\r\n"
+	sendData += fmt.Sprintf("Content-Length: %d\r\n", len(body))
+	sendData += "\r\n"
+	sendData += body
+	return sendData
+}
+
+func sendData(conn net.Conn, status int, body string) {
 	sendData := fmt.Sprintf("HTTP/1.1 %d ", status)
 	switch status {
 	case 200:
@@ -50,9 +58,26 @@ func sendData(conn net.Conn, status int) {
 	default:
 		os.Exit(1)
 	}
-	sendData += "\r\n\r\n"
-	fmt.Printf("Sending %s to %s", sendData, conn.RemoteAddr().String())
+	sendData += "\r\n"
+	sendData = appendBody(sendData, body)
+	fmt.Printf("Sending: %s\n", sendData)
 	conn.Write([]byte(sendData))
+}
+
+func echoData(url string) string {
+	_, after, _ := strings.Cut(url, "/echo/")
+	return after
+}
+
+func handleURL(conn net.Conn, url string) {
+	if url == "/" {
+		sendData(conn, 200, "")
+	}
+	if strings.HasPrefix(url, "/echo") {
+		sendData(conn, 200, echoData(url))
+	} else {
+		sendData(conn, 404, "")
+	}
 }
 
 func handleConnection(conn net.Conn) {
@@ -60,12 +85,7 @@ func handleConnection(conn net.Conn) {
 	connectionBytes := make([]byte, 1024)
 	conn.Read(connectionBytes)
 	headerMap := parseHeader(string(connectionBytes))
-	fmt.Printf("Recieved %s for %s\n", headerMap["method"], headerMap["url"])
-
-	if headerMap["url"] == "/" {
-		sendData(conn, 200)
-	} else {
-		sendData(conn, 404)
-	}
+	fmt.Printf("Recieved %s for %s\n\n", headerMap["method"], headerMap["url"])
+	handleURL(conn, headerMap["url"])
 
 }
