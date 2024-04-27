@@ -87,7 +87,7 @@ func sendFile(conn net.Conn, file, directory string) {
 	data += getHeader("Content-Type", "application/octet-stream")
 
 	absolutePath := fmt.Sprintf("%s%s", directory, file)
-	fmt.Println(absolutePath)
+	fmt.Println("dir", directory)
 	fileData, err := os.ReadFile(absolutePath)
 	if err != nil {
 		fmt.Println("Could not find the file")
@@ -117,7 +117,8 @@ func handleURL(conn net.Conn, headerMap map[string]string, args []string) {
 		sendData(conn, 200, headerMap["agent"])
 	} else if strings.HasPrefix(url, "/files") {
 		filePath := getSuffix(url, "/files/")
-		if len(args) > 1 && args[0] == "--" {
+		fmt.Println("args legnth: ", len(args))
+		if len(args) > 1 && args[0] == "--directory" {
 			sendFile(conn, filePath, args[1])
 		} else {
 			sendData(conn, 404, "")
